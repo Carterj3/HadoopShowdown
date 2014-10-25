@@ -15,7 +15,19 @@ import org.apache.pig.data.DataByteArray;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 
-// vv CutLoadFunc
+// WholeFileLoader is used to read a whole file as a single record.
+
+/*
+This is a sample pig script that uses it.
+
+register '/root/FileLoader.jar'
+
+input_data = load '$input' USING WholeFileLoader AS (text:chararray);
+dump input_data;
+
+*/
+
+
 public class WholeFileLoader extends LoadFunc {
 
 	private RecordReader reader;
