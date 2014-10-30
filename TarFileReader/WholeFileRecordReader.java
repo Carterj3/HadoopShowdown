@@ -1,5 +1,6 @@
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.GZIPInputStream;
@@ -16,21 +17,31 @@ import org.apache.tools.bzip2.CBZip2InputStream;
 import org.apache.tools.tar.TarEntry;
 import org.apache.tools.tar.TarInputStream;
 
-//vv WholeFileRecordReader
-class WholeFileRecordReader extends RecordReader<Text, Text> {
+public class WholeFileRecordReader extends RecordReader<Text, Text> {
 
 	private FileSplit fileSplit;
 	private Configuration conf;
-	
+
 	private TaskAttemptContext context;
-	
+
 	private Text key = new Text();
 	private Text value = new Text();
 
 	private TarInputStream stream;
-	
+
 	private long Length;
 	private long processed;
+
+	public WholeFileRecordReader() {
+
+	}
+
+	public WholeFileRecordReader(String fileLocation)
+			throws FileNotFoundException {
+		File file = new File(fileLocation);
+		Length = file.length();
+		stream = openInputFile(new File(fileLocation));
+	}
 
 	@Override
 	public void initialize(InputSplit split, TaskAttemptContext context)
@@ -53,15 +64,18 @@ class WholeFileRecordReader extends RecordReader<Text, Text> {
 	public boolean nextKeyValue() throws IOException, InterruptedException {
 		TarEntry entry;
 		if ((entry = stream.getNextEntry()) != null) {
-			while (entry.isDirectory()) {
-				continue;
+			while (entry != null && entry.isDirectory()) {
+				entry = stream.getNextEntry();
+			}
+			if(entry == null){
+				return false;
 			}
 			String filename = entry.getName();
 			byte[] data = getBytes(stream, entry.getSize());
 
 			key.set(new Text(filename));
 			value.set(new Text(data));
-			
+
 			processed += data.length;
 
 			return true;
@@ -81,7 +95,7 @@ class WholeFileRecordReader extends RecordReader<Text, Text> {
 
 	@Override
 	public float getProgress() throws IOException {
-		return processed/Length;
+		return processed / Length;
 	}
 
 	@Override
@@ -89,10 +103,15 @@ class WholeFileRecordReader extends RecordReader<Text, Text> {
 		stream.close();
 	}
 
-	private static TarInputStream openInputFile(File inputFile)
-			throws Exception {
-		InputStream fileStream = new FileInputStream(inputFile);
-		return openInputFile(fileStream, inputFile.getName());
+	private static TarInputStream openInputFile(File inputFile) {
+		InputStream fileStream;
+		try {
+			fileStream = new FileInputStream(inputFile);
+			return openInputFile(fileStream, inputFile.getName());
+		} catch (Exception e) {
+			return null;
+		}
+
 	}
 
 	private static TarInputStream openInputFile(InputStream fileStream,

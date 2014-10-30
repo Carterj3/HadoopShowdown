@@ -19,11 +19,15 @@ import org.apache.pig.data.TupleFactory;
 
 /*
  This is a sample pig script that uses it.
+ ## 
+ 
+pig -param ant=hdfs:///tmp/lib/ant-1.9.4.jar -param input=/tmp/Showdown/Exp/Header.tar -param loader=hdfs:///tmp/lib/TarFileReader-0.0.1-SNAPSHOT.jar tar.pig
+ 
+register '$ant'
+register '$loader'
 
- register '/root/FileLoader.jar'
-
- input_data = load '$input' USING WholeFileLoader AS (text:chararray);
- dump input_data;
+input_data = load '$input' USING WholeFileLoader() AS (filename:chararray,text:chararray);
+dump input_data;
 
  */
 
@@ -56,9 +60,10 @@ public class WholeFileLoader extends LoadFunc {
 			if (!reader.nextKeyValue()) {
 				return null;
 			}
-			String value = ((Text) reader.getCurrentValue()).toString();
+			
 			String key = ((Text) reader.getCurrentKey()).toString();
-
+			String value = ((Text) reader.getCurrentValue()).toString();
+			
 			Tuple tuple = tupleFactory.newTuple(2);
 
 			tuple.set(0, key);
