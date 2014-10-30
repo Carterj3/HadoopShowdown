@@ -15,18 +15,17 @@ import org.apache.pig.data.DataByteArray;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 
-// WholeFileLoader is used to read a whole file as a single record.
+// WholeFileLoader is used to read a whole archive (tar,bzip2) as a single record.
 
 /*
-This is a sample pig script that uses it.
+ This is a sample pig script that uses it.
 
-register '/root/FileLoader.jar'
+ register '/root/FileLoader.jar'
 
-input_data = load '$input' USING WholeFileLoader AS (text:chararray);
-dump input_data;
+ input_data = load '$input' USING WholeFileLoader AS (text:chararray);
+ dump input_data;
 
-*/
-
+ */
 
 public class WholeFileLoader extends LoadFunc {
 
@@ -58,9 +57,12 @@ public class WholeFileLoader extends LoadFunc {
 				return null;
 			}
 			String value = ((Text) reader.getCurrentValue()).toString();
-			
-			Tuple tuple = tupleFactory.newTuple(1);
-			tuple.set(0, value);
+			String key = ((Text) reader.getCurrentKey()).toString();
+
+			Tuple tuple = tupleFactory.newTuple(2);
+
+			tuple.set(0, key);
+			tuple.set(1, value);
 
 			return tuple;
 		} catch (InterruptedException e) {
